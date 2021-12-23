@@ -76,7 +76,10 @@ runCommand c = do
     print c
     case (command c) of 
          New -> newGame c
+         Delete -> deleteGame c
          Join -> joinGame c
+         Hit -> hit c
+         Stand -> stand c
          Help -> putStr $ unlines helpTxt
          _ -> putStrLn "Invalid command, type help for available commands."
          
@@ -88,21 +91,61 @@ newGame (Command{name=Just n, player=Just p}) = do
     if exists then
         putStrLn "The game save file already exists" 
     else 
-        do
-        writeGameState $ initialGameState n p
-        putStrLn $ "Starting new game with name: " ++ n
+        let gs = initialGameState n p in 
+            do
+            writeGameState gs
+            putStrLn $ "Starting new game with name: " ++ n
+            putStrLn $ show gs
+        
+deleteGame :: Command -> IO ()
+deleteGame (Command{name=Nothing}) = putStrLn "Please specify game name!"
+deleteGame (Command{name=Just n}) = do
+    exists <- doesFileExist (gameFilePath n)
+    if exists then
+        do 
+            removeFile (gameFilePath n)
+            putStrLn $ "Game " ++ n ++ " deleted!"
+    else 
+        putStrLn "The game does not exist"
 
 joinGame :: Command -> IO ()
 joinGame (Command{name=Nothing}) = putStrLn "Please specify game name!"
 joinGame (Command{player=Nothing}) = putStrLn "The player must have a name!"
 joinGame (Command{name=Just n, player=Just p}) = do
-    exists <- doesFileExist (gameFilePath n)
-    if exists then
-        do 
-            gs <- readGameState n
-            writeGameState $ setGuestPlayer gs p
+        mgs <- loadGame n
+        let gs (Just a) = a
+        if ((guestPlayer $ gs mgs) == Nothing) then
+            do
+            let ngs = setGuestPlayer (gs mgs) p 
+            writeGameState ngs
             putStrLn $ "Player " ++ p ++ " has joined game " ++ n
-    else 
-        putStrLn "The game does not exist"
+            putStrLn $ show ngs
+        else
+            do
+            putStrLn "The game has already started"
+            putStrLn $ show (gs mgs)
+
+hit :: Command -> IO ()
+hit (Command{name=Nothing}) = putStrLn "Please specify game name!"
+hit (Command{player=Nothing}) = putStrLn "Please specify player name!"
+hit (Command{name=Just n, player=Just p}) = do
+        mgs <- loadGame n
+        let gs (Just a) = a
+        if ((guestPlayer $ gs mgs) == Nothing) then
+            putStrLn "Waiting for guest player"
+        else
+            putStrLn "Hit!"
+        
+stand :: Command -> IO ()
+stand (Command{name=Nothing}) = putStrLn "Please specify game name!"
+stand (Command{player=Nothing}) = putStrLn "Please specify player name!"
+stand (Command{name=Just n, player=Just p}) = do
+        mgs <- loadGame n
+        let gs (Just a) = a
+        if ((guestPlayer $ gs mgs) == Nothing) then
+            putStrLn "Waiting for guest player"
+        else
+            putStrLn "Stand!"
+
         
         
