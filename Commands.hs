@@ -75,8 +75,9 @@ isPlayersTurn (GameState {hostPlayer=hp, guestPlayer=(Just gp), turn=t}) player 
                             
 updateState :: GameState -> Int -> [(CardType, CardSuit)] -> GameState
 updateState g@(GameState {hostHand=hh, guestHand=gh, turn=t}) s c 
-                                    | ( t == Host) = g {hostScore = s, hostHand = c ++ hh} 
-                                    | otherwise = g {guestScore = s, guestHand = c ++ gh}
+                                    | ( t == Host) = g {hostScore = s, hostHand = c ++ hh, status=ns} 
+                                    | otherwise = g {guestScore = s, guestHand = c ++ gh, status=ns}
+                                    where ns = if s > 21 then Finished else Playing
                                     
 guestTurn :: GameState -> GameState
 guestTurn g@(GameState {turn=t}) = g { turn=Guest } 
@@ -170,12 +171,12 @@ printScore (GameState {hostPlayer=hp, hostScore=hs, hostHand=hh,
 
                             
 printStatus :: GameState -> IO ()
-printStatus (GameState {hostPlayer=hp, hostScore=hs, guestPlayer=(Just gp), guestScore=gs, turn=t}) 
+printStatus (GameState {hostPlayer=hp, hostScore=hs, guestPlayer=(Just gp), guestScore=gs, turn=t, status=s}) 
                 | hs > 21 = putStrLn $ hp ++ " is bust, " ++ gp ++ " has won the game!!"
                 | gs > 21 = putStrLn $ gp ++ " is bust, " ++ hp ++ " has won the game!!"
-                | hs == 21 = putStrLn $ hp ++ " has won the game"
-                | gs == 21 = putStrLn $ gp ++ " has won the game"
-                | hs == 21 && gs == 21 = putStrLn "The game is a tie"
+                | s == Finished && hs > gs = putStrLn $ hp ++ " has won the game"
+                | s == Finished && gs > hs = putStrLn $ gp ++ " has won the game"
+                | (gs == hs) = putStrLn "The game is a tie"
                 | t == Host = putStrLn $ hp ++ "'s turn"
                 | t == Guest = putStrLn $ gp ++ "'s turn"
                 

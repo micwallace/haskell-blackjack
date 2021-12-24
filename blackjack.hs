@@ -137,7 +137,10 @@ hit (Command{name=Just n, player=Just p}) = do
         if ((guestPlayer $ gs mgs) == Nothing) then
             putStrLn "Waiting for guest player"
         else
-            doHit (gs mgs) p
+            if ((status $ gs mgs) == Finished) then
+                putStr "Game has already finished!"
+            else
+                doHit (gs mgs) p
         
 stay :: Command -> IO ()
 stay (Command{name=Nothing}) = putStrLn "Please specify game name!"
@@ -148,7 +151,10 @@ stay (Command{name=Just n, player=Just p}) = do
         if ((guestPlayer $ gs mgs) == Nothing) then
             putStrLn "Waiting for guest player"
         else
-            doStay (gs mgs) p
+            if ((status $ gs mgs) == Finished) then
+                putStr "Game has already finished!"
+            else
+                doStay (gs mgs) p
             
 showGame :: Command -> IO ()
 showGame (Command{name=Nothing}) = putStrLn "Please specify game name!"
