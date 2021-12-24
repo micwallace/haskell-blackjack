@@ -68,10 +68,10 @@ hit (Command{name=Just n, player=Just p}) = do
             else
                 doHit (gs mgs) p
         
-stay :: Command -> IO ()
-stay (Command{name=Nothing}) = putStrLn "Please specify game name!"
-stay (Command{player=Nothing}) = putStrLn "Please specify player name!"
-stay (Command{name=Just n, player=Just p}) = do
+stand :: Command -> IO ()
+stand (Command{name=Nothing}) = putStrLn "Please specify game name!"
+stand (Command{player=Nothing}) = putStrLn "Please specify player name!"
+stand (Command{name=Just n, player=Just p}) = do
         mgs <- loadGame n
         let gs (Just a) = a
         if ((guestPlayer $ gs mgs) == Nothing) then

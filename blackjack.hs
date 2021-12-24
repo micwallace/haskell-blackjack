@@ -19,7 +19,7 @@ helpTxt = [
     "delete <name> - delete game",
     "join <game> <player> - join game",
     "hit <game> <player> - take a card from the deck",
-    "stay <game> <player> - move onto guest player or end the game",
+    "stand <game> <player> - move onto guest player or end the game",
     "show <game> - view game data and score"]
             
 newlines :: Integer -> IO ()
@@ -52,7 +52,7 @@ buildCommandData (Just c) parts = case (c) of
                                     "delete" -> Command {command=Delete, name=nth 2 parts, player=Nothing}
                                     "join" -> Command {command=Join, name=nth 2 parts, player=nth 3 parts}
                                     "hit" -> Command {command=Hit, name=nth 2 parts, player=nth 3 parts}
-                                    "stay" -> Command {command=Stand, name=nth 2 parts, player=nth 3 parts}
+                                    "stand" -> Command {command=Stand, name=nth 2 parts, player=nth 3 parts}
                                     "show" -> Command {command=Show, name=nth 2 parts, player=Nothing}
                                     _ -> Command {command = Invalid, name=Nothing, player=Nothing}
     
@@ -62,7 +62,7 @@ runCommand c = case (command c) of
                     Delete -> deleteGame c
                     Join -> joinGame c
                     Hit -> hit c
-                    Stand -> stay c
+                    Stand -> stand c
                     Show -> showGame c
                     Help -> putStr $ unlines helpTxt
                     _ -> putStrLn "Invalid command, type help for available commands."
