@@ -1,0 +1,5 @@
+.idea/*
+*.kdev4
+*.hi
+*.o
+*.json
