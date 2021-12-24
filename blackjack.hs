@@ -28,7 +28,8 @@ helpTxt = [
     "delete <name> - delete game",
     "join <game> <player> - join game",
     "hit <game> <player> - take a card from the deck",
-    "stand <game> <player> - skip turn"]
+    "stand <game> <player> - skip turn",
+    "show <game> - view game data and score"]
             
 newlines :: Integer -> IO ()
 newlines n = putStr $ unlines ["\n" | _ <- [1..n]]
@@ -37,13 +38,12 @@ commandLoop :: IO ()
 commandLoop = do
     command <- getLine
     newlines 1
-    putStrLn $ "Received " ++ command ++ " command"
     runCommand $ parseCommand command
     newlines 1
     commandLoop
     
     
-data CommandType = Help | New | Delete | Join | Hit | Stand | Invalid deriving (Show)
+data CommandType = Help | New | Delete | Join | Hit | Stand | Show | Invalid deriving (Show)
     
 data Command = Command {command :: CommandType, 
                         name :: Maybe String, 
@@ -69,19 +69,19 @@ buildCommandData (Just c) parts = case (c) of
                                     "join" -> Command {command=Join, name=nth 2 parts, player=nth 3 parts}
                                     "hit" -> Command {command=Hit, name=nth 2 parts, player=nth 3 parts}
                                     "stand" -> Command {command=Stand, name=nth 2 parts, player=nth 3 parts}
+                                    "show" -> Command {command=Show, name=nth 2 parts, player=Nothing}
                                     _ -> Command {command = Invalid, name=Nothing, player=Nothing}
     
 runCommand :: Command -> IO ()
-runCommand c = do
-    print c
-    case (command c) of 
-         New -> newGame c
-         Delete -> deleteGame c
-         Join -> joinGame c
-         Hit -> hit c
-         Stand -> stand c
-         Help -> putStr $ unlines helpTxt
-         _ -> putStrLn "Invalid command, type help for available commands."
+runCommand c = case (command c) of 
+                    New -> newGame c
+                    Delete -> deleteGame c
+                    Join -> joinGame c
+                    Hit -> hit c
+                    Stand -> stand c
+                    Show -> showGame c
+                    Help -> putStr $ unlines helpTxt
+                    _ -> putStrLn "Invalid command, type help for available commands."
          
 newGame :: Command -> IO ()
 newGame (Command{name=Nothing}) = putStrLn "The game must have a name!"
@@ -115,11 +115,14 @@ joinGame (Command{name=Just n, player=Just p}) = do
         mgs <- loadGame n
         let gs (Just a) = a
         if ((guestPlayer $ gs mgs) == Nothing) then
-            do
-            let ngs = setGuestPlayer (gs mgs) p 
-            writeGameState ngs
-            putStrLn $ "Player " ++ p ++ " has joined game " ++ n
-            putStrLn $ show ngs
+            if (hostPlayer $ gs mgs) == p then
+                putStrLn "The host player has the same name, choose a different one"
+            else 
+                do
+                let ngs = setGuestPlayer (gs mgs) p 
+                writeGameState ngs
+                putStrLn $ "Player " ++ p ++ " has joined game " ++ n
+                putStrLn $ show ngs
         else
             do
             putStrLn "The game has already started"
@@ -134,7 +137,7 @@ hit (Command{name=Just n, player=Just p}) = do
         if ((guestPlayer $ gs mgs) == Nothing) then
             putStrLn "Waiting for guest player"
         else
-            putStrLn "Hit!"
+            doHit (gs mgs) p
         
 stand :: Command -> IO ()
 stand (Command{name=Nothing}) = putStrLn "Please specify game name!"
@@ -145,7 +148,19 @@ stand (Command{name=Just n, player=Just p}) = do
         if ((guestPlayer $ gs mgs) == Nothing) then
             putStrLn "Waiting for guest player"
         else
-            putStrLn "Stand!"
+            doStand (gs mgs) p
+            
+showGame :: Command -> IO ()
+showGame (Command{name=Nothing}) = putStrLn "Please specify game name!"
+showGame (Command{name=Just n}) = do
+        mgs <- loadGame n
+        let gs (Just a) = a
+        putStrLn ""
+        putStrLn $ show (gs mgs)
+        putStrLn ""
+        printScore (gs mgs)
+        putStrLn ""
+        printStatus (gs mgs)
 
         
         

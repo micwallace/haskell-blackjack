@@ -1,1 +1,1 @@
-{"gameName":"game1","guestHand":[],"guestPlayer":"player1","guestScore":0,"hostHand":[],"hostPlayer":"player1","hostScore":0,"status":"Playing","turn":"Host"}
+{"gameName":"game1","guestHand":[["Four","Spades"],["Two","Spades"],["Seven","Diamonds"],["Six","Clubs"]],"guestPlayer":"player2","guestScore":19,"hostHand":[["Eight","Spades"],["King","Hearts"],["Four","Spades"],["Six","Clubs"]],"hostPlayer":"player1","hostScore":28,"status":"Playing","turn":"Guest"}
