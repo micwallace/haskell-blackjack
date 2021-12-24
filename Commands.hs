@@ -12,6 +12,7 @@ import Data.Aeson
 import Data.Map
 import Data.Aeson.Types
 import qualified Data.ByteString.Lazy as B
+import Deck
 
 data GameStatus = Waiting | Playing | Finished deriving (Show, Generic)
 

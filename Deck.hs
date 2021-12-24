@@ -1,10 +1,8 @@
-module Blackjack.Deck where
+module Deck where
 
-import Control.Monad
-import Control.Monad.Random
 import Data.List (sort, intercalate)
-import qualified System.Random as Rand
-import System.Random.Shuffle (shuffleM)
+import System.Random as Random
+import System.Random.Shuffle (shuffle')
 
 data CardType =
   Two | Three | Four | Five |
@@ -44,11 +42,26 @@ nDeck :: Int -> [(CardType, CardSuit)]
 nDeck 1 = cardDeck
 nDeck n = if (n < 1) then [] else concat $ replicate n cardDeck
 
-shuffledDeck :: ([(CardType, CardSuit)], Rand.StdGen)
-shuffledDeck = (runRand (shuffleM (nDeck 4)) (Rand.mkStdGen 1000))
-                     
+shuffleDeck :: [(CardType, CardSuit)] -> IO [(CardType, CardSuit)]
+shuffleDeck cards = do 
+            rng <- newStdGen
+            let s = shuffle' cards (length cards) rng
+            rng <- newStdGen
+            return $ shuffle' s (length s) rng
+        
 
+remainingDeck :: [(CardType, CardSuit)] -> [(CardType, CardSuit)] -> [(CardType, CardSuit)]
+remainingDeck _ [] = []
+remainingDeck [] (y:ys) = y:ys
+remainingDeck (x:xs) (y:ys) = remainingDeck xs (removeCard x (y:ys))
 
-
+removeCard :: (CardType, CardSuit) -> [(CardType, CardSuit)] -> [(CardType, CardSuit)]
+removeCard _ [] = []
+removeCard x (y:ys) | x == y = ys 
+                    | otherwise = y : removeCard x ys
+                    
+drawCard :: [(CardType, CardSuit)] -> IO (CardType, CardSuit)
+drawCard drawn = do deck <- shuffleDeck (remainingDeck drawn (nDeck 4))
+                    return $ head deck
 
 
