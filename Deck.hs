@@ -2,10 +2,8 @@
 
 module Deck where
 
-import Data.List (sort, intercalate)
-import System.Random as Random
+import System.Random
 import System.Random.Shuffle (shuffle')
-import Data.Monoid ((<>))
 import GHC.Generics
 
 data CardType =
