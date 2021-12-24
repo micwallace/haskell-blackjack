@@ -9,7 +9,7 @@ import System.Directory
 import Data.Monoid ((<>))
 import GHC.Generics
 import Data.Aeson
-import Data.Map
+import qualified Data.Map as DMap
 import Data.Aeson.Types
 import qualified Data.ByteString.Lazy as B
 import Deck
@@ -21,10 +21,10 @@ data PlayerTurn = Host | Guest deriving (Show, Generic, Eq)
 data GameState = GameState {gameName :: String, 
                             hostPlayer :: String, 
                             hostHand :: [(CardType, CardSuit)],
-                            hostScore :: Integer,
+                            hostScore :: Int,
                             guestPlayer :: Maybe String,
                             guestHand :: [(CardType, CardSuit)],
-                            guestScore :: Integer, 
+                            guestScore :: Int, 
                             turn :: PlayerTurn, 
                             status :: GameStatus} deriving (Show, Generic)
                             
@@ -73,11 +73,16 @@ isPlayersTurn (GameState {hostPlayer=hp, guestPlayer=(Just gp), turn=t}) player 
                                                                 else
                                                                     gp == player
                             
-updateState :: GameState -> Integer -> [(CardType, CardSuit)] -> GameState
-updateState g@(GameState {gameName=gn, hostPlayer=hp, hostHand=hh, hostScore=hs, 
-                            guestPlayer=gp, guestHand=gh, guestScore=gs, turn=t}) s c 
-                                    | ( t == Host) = g {hostScore = hs + s, hostHand = c ++ hh, turn=Guest} 
-                                    | otherwise = g {guestScore = gs + s, guestHand = c ++ gh, turn=Host}
+updateState :: GameState -> Int -> [(CardType, CardSuit)] -> GameState
+updateState g@(GameState {hostHand=hh, guestHand=gh, turn=t}) s c 
+                                    | ( t == Host) = g {hostScore = s, hostHand = c ++ hh} 
+                                    | otherwise = g {guestScore = s, guestHand = c ++ gh}
+                                    
+guestTurn :: GameState -> GameState
+guestTurn g@(GameState {turn=t}) = g { turn=Guest } 
+
+gameFinished :: GameState -> GameState
+gameFinished g@(GameState {status=s}) = g { status=Finished }
                             
 doHit :: GameState -> String -> IO ()
 doHit gs player = do 
@@ -93,32 +98,66 @@ doHit gs player = do
                             
 
 processDrawnCard :: GameState -> (CardType, CardSuit) -> IO ()
-processDrawnCard gs card =  do 
-                                let {score = cardScore (fst card)}
+processDrawnCard gs@(GameState {hostHand=hh, guestHand=gh, turn=t}) card =  do 
+                                let {score = calculateScore (if t == Host then card:hh else card:gh)}
                                 ngs <- writeGameState (updateState gs score [card])
                                 putStrLn $ show ngs
                                 putStrLn ""
                                 printScore ngs
                                 putStrLn ""
                                 printStatus ngs
+                                
+calculateScore :: [(CardType, CardSuit)] -> Int
+calculateScore c | s > 21 = reduceAces (countAces c) s
+                 | otherwise = s
+                    where s = calcScoreNum c
+                   
+calcScoreNum :: [(CardType, CardSuit)] -> Int
+calcScoreNum [] = 0
+calcScoreNum cs = sum $ map (\a -> cardScore (fst a)) cs
                     
+countAces :: [(CardType, CardSuit)] -> Int
+countAces cards = length [c | c <- cards, (fst c) == Ace] 
+
+reduceAces :: Int -> Int -> Int
+reduceAces a s | a == 0 = s
+               | otherwise = if s - 10 < 21 then s - 10 else reduceAces (a - 1) (s-10)
                             
--- TODO: Prevent multiple stands ?
-doStand :: GameState -> String -> IO ()
-doStand gs player = do 
+doStay :: GameState -> String -> IO ()
+doStay gs player = do 
                     if (not $ isPlayersTurn gs player) then
                         putStrLn "Not your turn!"
                     else
-                        do
-                            ngs <- writeGameState (updateState gs 0 [])
-                            writeGameState ngs
-                            putStrLn $ show ngs
-                            putStrLn ""
-                            putStrLn $ player ++ "stood!"
-                            putStrLn ""
-                            printScore ngs
-                            putStrLn ""
-                            printStatus ngs
+                        if ((turn gs) == Host) then
+                            hostStay gs
+                        else
+                            guestStay gs
+                        
+                            
+hostStay :: GameState -> IO ()
+hostStay gs = do
+                ngs <- writeGameState $ guestTurn gs
+                writeGameState ngs
+                putStrLn $ show ngs
+                putStrLn ""
+                putStrLn $ (show (hostPlayer ngs)) ++ " has stayed!"
+                putStrLn ""
+                printScore ngs
+                putStrLn ""
+                printStatus ngs
+            
+            
+guestStay :: GameState -> IO ()
+guestStay gs = do
+                ngs <- writeGameState $ gameFinished gs
+                writeGameState ngs
+                putStrLn $ show ngs
+                putStrLn ""
+                putStrLn $ "Game completed!"
+                putStrLn ""
+                printScore ngs
+                putStrLn ""
+                printStatus ngs
     
     
 printScore :: GameState -> IO ()
@@ -136,6 +175,7 @@ printStatus (GameState {hostPlayer=hp, hostScore=hs, guestPlayer=(Just gp), gues
                 | gs > 21 = putStrLn $ gp ++ " is bust, " ++ hp ++ " has won the game!!"
                 | hs == 21 = putStrLn $ hp ++ " has won the game"
                 | gs == 21 = putStrLn $ gp ++ " has won the game"
+                | hs == 21 && gs == 21 = putStrLn "The game is a tie"
                 | t == Host = putStrLn $ hp ++ "'s turn"
                 | t == Guest = putStrLn $ gp ++ "'s turn"
                 

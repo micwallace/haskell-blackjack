@@ -19,7 +19,7 @@ data CardSuit =
   deriving (Show, Eq, Enum, Generic)
   
   
-cardScore :: CardType -> Integer
+cardScore :: CardType -> Int
 cardScore Two = 2
 cardScore Three = 3
 cardScore Four = 4
@@ -32,7 +32,7 @@ cardScore Ten = 10
 cardScore Jack = 10
 cardScore Queen = 10
 cardScore King = 10
-cardScore Ace = 1
+cardScore Ace = 11
 
 
 cardDeck :: [(CardType, CardSuit)]
@@ -72,5 +72,8 @@ shuffleDeck cards = do
 drawCard :: [(CardType, CardSuit)] -> IO (CardType, CardSuit)
 drawCard drawn = do deck <- shuffleDeck (remainingDeck drawn (nDeck 4))
                     return $ head deck
+                    
+testDrawCard :: [(CardType, CardSuit)] -> IO (CardType, CardSuit)
+testDrawCard drawn = do return (Ace, Spades)
 
 

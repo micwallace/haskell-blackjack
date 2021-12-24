@@ -28,7 +28,7 @@ helpTxt = [
     "delete <name> - delete game",
     "join <game> <player> - join game",
     "hit <game> <player> - take a card from the deck",
-    "stand <game> <player> - skip turn",
+    "stay <game> <player> - move onto guest player or end the game",
     "show <game> - view game data and score"]
             
 newlines :: Integer -> IO ()
@@ -68,7 +68,7 @@ buildCommandData (Just c) parts = case (c) of
                                     "delete" -> Command {command=Delete, name=nth 2 parts, player=Nothing}
                                     "join" -> Command {command=Join, name=nth 2 parts, player=nth 3 parts}
                                     "hit" -> Command {command=Hit, name=nth 2 parts, player=nth 3 parts}
-                                    "stand" -> Command {command=Stand, name=nth 2 parts, player=nth 3 parts}
+                                    "stay" -> Command {command=Stand, name=nth 2 parts, player=nth 3 parts}
                                     "show" -> Command {command=Show, name=nth 2 parts, player=Nothing}
                                     _ -> Command {command = Invalid, name=Nothing, player=Nothing}
     
@@ -78,7 +78,7 @@ runCommand c = case (command c) of
                     Delete -> deleteGame c
                     Join -> joinGame c
                     Hit -> hit c
-                    Stand -> stand c
+                    Stand -> stay c
                     Show -> showGame c
                     Help -> putStr $ unlines helpTxt
                     _ -> putStrLn "Invalid command, type help for available commands."
@@ -139,16 +139,16 @@ hit (Command{name=Just n, player=Just p}) = do
         else
             doHit (gs mgs) p
         
-stand :: Command -> IO ()
-stand (Command{name=Nothing}) = putStrLn "Please specify game name!"
-stand (Command{player=Nothing}) = putStrLn "Please specify player name!"
-stand (Command{name=Just n, player=Just p}) = do
+stay :: Command -> IO ()
+stay (Command{name=Nothing}) = putStrLn "Please specify game name!"
+stay (Command{player=Nothing}) = putStrLn "Please specify player name!"
+stay (Command{name=Just n, player=Just p}) = do
         mgs <- loadGame n
         let gs (Just a) = a
         if ((guestPlayer $ gs mgs) == Nothing) then
             putStrLn "Waiting for guest player"
         else
-            doStand (gs mgs) p
+            doStay (gs mgs) p
             
 showGame :: Command -> IO ()
 showGame (Command{name=Nothing}) = putStrLn "Please specify game name!"
