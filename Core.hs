@@ -172,7 +172,7 @@ printStatus (GameState {hostPlayer=hp, hostScore=hs, guestPlayer=(Just gp), gues
                 | gs > 21 = putStrLn $ gp ++ " is bust, " ++ hp ++ " has won the game!!"
                 | s == Finished && hs > gs = putStrLn $ hp ++ " has won the game"
                 | s == Finished && gs > hs = putStrLn $ gp ++ " has won the game"
-                | (gs == hs) = putStrLn "The game is a tie"
+                | s == Finished && (gs == hs) = putStrLn "The game is a tie"
                 | t == Host = putStrLn $ hp ++ "'s turn"
                 | t == Guest = putStrLn $ gp ++ "'s turn"
                 
