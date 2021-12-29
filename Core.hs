@@ -163,7 +163,7 @@ printScore (GameState {hostPlayer=hp, hostScore=hs, hostHand=hh,
                         do
                             putStrLn $ "--- score ---"
                             putStrLn $ "Host: " ++ hp ++ "\t" ++ (show hs) ++ "\t" ++ (show hh)
-                            putStrLn $ "Host: " ++ gp ++ "\t" ++ (show gs) ++ "\t" ++ (show gh)
+                            putStrLn $ "Guest: " ++ gp ++ "\t" ++ (show gs) ++ "\t" ++ (show gh)
 
                             
 printStatus :: GameState -> IO ()
